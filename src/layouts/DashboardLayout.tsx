@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, FileText, Activity, Shield, Users, LogOut, Settings } from 'lucide-react';
+import DiagnosticsPanel from '../components/DiagnosticsPanel';
 
 export default function DashboardLayout() {
   const location = useLocation();
   const path = location.pathname;
+  const [isDiagOpen, setIsDiagOpen] = useState(false);
 
   return (
     <div className="app-container">
@@ -62,13 +65,13 @@ export default function DashboardLayout() {
             <h1>Compliance Dashboard</h1>
           </div>
           <div className="topbar-actions">
-            <button className="btn">
+            <button className="btn" onClick={() => setIsDiagOpen(true)}>
               <Settings size={16} />
               Diagnostics
             </button>
-            <button className="btn btn-primary">
+            <Link to="/new-intake" className="btn btn-primary" style={{textDecoration: 'none'}}>
               + New Case
-            </button>
+            </Link>
           </div>
         </header>
         
@@ -76,6 +79,8 @@ export default function DashboardLayout() {
           <Outlet />
         </div>
       </main>
+
+      <DiagnosticsPanel isOpen={isDiagOpen} onClose={() => setIsDiagOpen(false)} />
     </div>
   );
 }
