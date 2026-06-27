@@ -1,32 +1,64 @@
-# React + TypeScript + Vite
+# Haven
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Haven is an intelligent, multi-agent AI system designed to streamline and automate workplace case management. Acting as a digital advisory board for HR and management teams, Haven orchestrates specialized AI agents to triage employee incidents, assess psychosocial and compliance risks, and compile actionable advisory memos in real-time.
 
-Currently, two official plugins are available:
+## Architecture
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Haven is a full-stack application optimized for serverless deployment on Vercel. It seamlessly serves a static frontend while routing API requests to an Express serverless function.
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```mermaid
+graph TD
+    User([User]) -->|Submits Case| UI[React + Vite Frontend]
+    UI -->|POST /api/cases/review| API[Express Backend API]
+    
+    subgraph Multi-Agent AI System
+        API --> Agent1[Triage Sentinel]
+        API --> Agent2[Risk Analytics Engine]
+        API --> Agent3[HR Advisory]
+        
+        Agent1 -.->|Urgency Rating| Agent2
+        Agent2 -.->|Risk Vectors| Agent3
+        Agent3 -.->|Final Memo| API
+    end
+    
+    API -->|Returns Deliberation| UI
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Tech Stack
+
+- **Frontend:** React 19, Vite, Vanilla CSS (with modern, premium styling), Lucide React
+- **Backend:** Node.js, Express, TypeScript
+- **AI Integration:** Google GenAI / Custom Mock Agent Pipeline
+- **Deployment:** Vercel (using `vercel.json` rewrites and `esbuild` for serverless function compilation)
+
+## Getting Started
+
+### Prerequisites
+- Node.js (v18 or newer recommended)
+
+### Installation
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/anushkagupta200615-jpg/Haven.git
+   cd Haven
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+### Running Locally
+To start both the Vite development server and the Express backend simultaneously:
+```bash
+npm run dev
+```
+The application will be running at `http://localhost:3000`.
+
+### Production Build
+To build the static frontend and bundle the backend for Vercel:
+```bash
+npm run build
+```
+
+## Deployment
+Haven is ready to be deployed on Vercel. Simply import the repository in your Vercel dashboard. The `vercel.json` file is pre-configured to route API requests to the compiled Express serverless function while serving the Vite app via the Vercel edge CDN.
