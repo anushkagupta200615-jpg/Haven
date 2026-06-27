@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import DashboardLayout from './layouts/DashboardLayout';
 import Dashboard from './pages/Dashboard';
+import NewIntake from './pages/NewIntake';
 
 function App() {
   return (
@@ -14,9 +15,7 @@ function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="active-cases" element={<Dashboard />} />
-          <Route path="new-intake" element={
-            <div className="card"><div className="card-body"><h1>New Intake form would go here</h1></div></div>
-          } />
+          <Route path="new-intake" element={<NewIntake />} />
           {/* Catch-all for other sidebar links */}
           <Route path="*" element={<Dashboard />} />
         </Route>

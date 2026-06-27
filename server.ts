@@ -8,34 +8,69 @@ const app = express();
 app.use(express.json());
 const PORT = process.env.PORT || 3000;
 
+// In-memory database for the demo
+let cases: any[] = [
+  {
+    id: "case-2026-001",
+    title: "Finance Dept: Sudden Absenteeism & Psychological Safety",
+    department: "Finance",
+    category: "Psychosocial Risk / Conflict Resolution",
+    severity: "elevated",
+    status: "sign-off",
+    riskProfile: { systemic: 42, bullying: 28, fatigue: 20, physical: 10 }
+  },
+  {
+    id: "case-2026-002",
+    title: "Support Operations: Overwhelming Emotional Distress",
+    department: "Customer Operations",
+    category: "Occupational Health / Burnout Mitigation",
+    severity: "moderate",
+    status: "sign-off",
+    riskProfile: { systemic: 35, bullying: 15, fatigue: 60, physical: 5 }
+  }
+];
+
 // API Routes
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", message: "Haven API is running!" });
+  res.json({ status: "ok" });
 });
 
-app.post("/api/cases/review", async (req, res) => {
+app.get("/api/cases", (req, res) => {
+  res.json(cases);
+});
+
+app.post("/api/cases", async (req, res) => {
   const { description } = req.body;
-  // Mock AI agent deliberation
-  const results = [
-    { agent: "Triage Sentinel", action: "Assessed case urgency as Medium.", status: "completed" },
-    { agent: "Risk Analytics", action: "No immediate physical risk. Mild psychosocial risk.", status: "completed" },
-    { agent: "HR Advisory", action: "Recommended manager check-in and EAP referral.", status: "completed" }
-  ];
+  
+  // Simulate AI agent deliberation based on description length/keywords
+  const isUrgent = description.toLowerCase().includes('urgent') || description.toLowerCase().includes('danger');
+  
+  const newCase = {
+    id: `case-2026-00${cases.length + 1}`,
+    title: description.substring(0, 50) + (description.length > 50 ? '...' : ''),
+    department: "General",
+    category: isUrgent ? "Immediate Safety Threat" : "General Wellbeing Concern",
+    severity: isUrgent ? "critical" : "moderate",
+    status: "triage",
+    riskProfile: {
+      systemic: Math.floor(Math.random() * 50),
+      bullying: Math.floor(Math.random() * 50),
+      fatigue: Math.floor(Math.random() * 50),
+      physical: isUrgent ? 80 : Math.floor(Math.random() * 30),
+    }
+  };
+
+  cases.unshift(newCase);
   
   // Simulate delay
   await new Promise(resolve => setTimeout(resolve, 1500));
   
-  res.json({
-    success: true,
-    results,
-    memo: "Based on the assessment, please schedule a 1-on-1 with the employee and provide the EAP contact details."
-  });
+  res.json({ success: true, case: newCase });
 });
 
 // Serve the Vite App
 async function startServer() {
   if (process.env.VERCEL) {
-    // On Vercel: static files are served by Vercel's CDN from dist/; Express handles API only.
     return;
   }
 

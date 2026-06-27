@@ -1,4 +1,42 @@
+import { useState, useEffect } from 'react';
+
 export default function Dashboard() {
+  const [cases, setCases] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/cases')
+      .then(res => res.json())
+      .then(data => {
+        setCases(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Failed to fetch cases", err);
+        setLoading(false);
+      });
+  }, []);
+
+  const criticalCount = cases.filter(c => c.severity === 'critical').length;
+  const underReviewCount = cases.filter(c => c.status === 'triage').length;
+  const pendingSignoffCount = cases.filter(c => c.status === 'sign-off').length;
+  
+  // Aggregate average risks for the profile
+  const avgRisk = cases.reduce((acc, curr) => {
+    acc.systemic += curr.riskProfile?.systemic || 0;
+    acc.bullying += curr.riskProfile?.bullying || 0;
+    acc.fatigue += curr.riskProfile?.fatigue || 0;
+    acc.physical += curr.riskProfile?.physical || 0;
+    return acc;
+  }, { systemic: 0, bullying: 0, fatigue: 0, physical: 0 });
+
+  if (cases.length > 0) {
+    avgRisk.systemic = Math.round(avgRisk.systemic / cases.length);
+    avgRisk.bullying = Math.round(avgRisk.bullying / cases.length);
+    avgRisk.fatigue = Math.round(avgRisk.fatigue / cases.length);
+    avgRisk.physical = Math.round(avgRisk.physical / cases.length);
+  }
+
   return (
     <>
       {/* Metrics Row */}
@@ -8,14 +46,14 @@ export default function Dashboard() {
             <span>Critical Cases</span>
             <span style={{color: 'var(--danger-color)'}}>🚨</span>
           </div>
-          <div className="metric-value">02</div>
+          <div className="metric-value">0{criticalCount}</div>
         </div>
         <div className="metric-card">
           <div className="metric-header">
             <span>Under Review</span>
             <span style={{color: 'var(--warning-color)'}}>⏳</span>
           </div>
-          <div className="metric-value">04</div>
+          <div className="metric-value">0{underReviewCount}</div>
         </div>
         <div className="metric-card">
           <div className="metric-header">
@@ -29,7 +67,7 @@ export default function Dashboard() {
             <span>Pending Sign-off</span>
             <span style={{color: 'var(--text-muted)'}}>⚖️</span>
           </div>
-          <div className="metric-value">02</div>
+          <div className="metric-value">0{pendingSignoffCount}</div>
         </div>
       </div>
 
@@ -41,53 +79,29 @@ export default function Dashboard() {
             <span className="badge warning">Live Feed</span>
           </div>
           <div className="case-list">
-            <div className="case-item">
-              <div className="case-info">
-                <h4>case-2026-001</h4>
-                <h3>Finance Dept: Sudden Absenteeism & Psychological Safety</h3>
-                <p>Finance • Psychosocial Risk / Conflict Resolution</p>
-              </div>
-              <div className="case-badges">
-                <span className="status-badge elevated">Elevated</span>
-                <span className="status-badge action">Sign-off</span>
-              </div>
-            </div>
-            
-            <div className="case-item">
-              <div className="case-info">
-                <h4>case-2026-002</h4>
-                <h3>Support Operations: Overwhelming Emotional Distress</h3>
-                <p>Customer Operations • Occupational Health / Burnout Mitigation</p>
-              </div>
-              <div className="case-badges">
-                <span className="status-badge action">Moderate</span>
-                <span className="status-badge action">Sign-off</span>
-              </div>
-            </div>
-
-            <div className="case-item">
-              <div className="case-info">
-                <h4>case-7883</h4>
-                <h3>Construction Dept: Physical Safety Hazard Incident Evaluation</h3>
-                <p>Construction • Physical Safety Hazard</p>
-              </div>
-              <div className="case-badges">
-                <span className="status-badge elevated">Elevated</span>
-                <span className="status-badge action">Sign-off</span>
-              </div>
-            </div>
-
-            <div className="case-item">
-              <div className="case-info">
-                <h4>case-4175</h4>
-                <h3>Warehouse: Physical Safety Hazard Incident Evaluation</h3>
-                <p>Warehouse • Physical Safety Hazard</p>
-              </div>
-              <div className="case-badges">
-                <span className="status-badge low">Low</span>
-                <span className="status-badge warning">Triage</span>
-              </div>
-            </div>
+            {loading ? (
+              <div style={{padding: '2rem', textAlign: 'center', color: 'var(--text-muted)'}}>Loading cases...</div>
+            ) : cases.length === 0 ? (
+              <div style={{padding: '2rem', textAlign: 'center', color: 'var(--text-muted)'}}>No cases found.</div>
+            ) : (
+              cases.map((c, idx) => (
+                <div key={idx} className="case-item">
+                  <div className="case-info">
+                    <h4>{c.id}</h4>
+                    <h3>{c.title}</h3>
+                    <p>{c.department} • {c.category}</p>
+                  </div>
+                  <div className="case-badges">
+                    <span className={`status-badge ${c.severity === 'critical' ? 'danger' : c.severity === 'elevated' ? 'warning' : 'action'}`}>
+                      {c.severity}
+                    </span>
+                    <span className={`status-badge ${c.status === 'triage' ? 'warning' : 'low'}`}>
+                      {c.status}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -96,47 +110,47 @@ export default function Dashboard() {
           {/* Risk Profile */}
           <div className="card">
             <div className="card-header">
-              <h3 className="card-title">Psychosocial Risk Profile</h3>
+              <h3 className="card-title">Average Risk Profile</h3>
               <span className="badge">L1 Matrix</span>
             </div>
             <div className="card-body">
               <div className="risk-item">
                 <div className="risk-header">
                   <span>Systemic Psychosocial Stress</span>
-                  <span className="risk-value high">42%</span>
+                  <span className="risk-value high">{avgRisk.systemic}%</span>
                 </div>
                 <div className="progress-bg">
-                  <div className="progress-bar red" style={{ width: '42%' }}></div>
+                  <div className="progress-bar red" style={{ width: `${avgRisk.systemic}%` }}></div>
                 </div>
               </div>
               
               <div className="risk-item">
                 <div className="risk-header">
                   <span>Bullying & Harassment Vector</span>
-                  <span className="risk-value med">28%</span>
+                  <span className="risk-value med">{avgRisk.bullying}%</span>
                 </div>
                 <div className="progress-bg">
-                  <div className="progress-bar orange" style={{ width: '28%' }}></div>
+                  <div className="progress-bar orange" style={{ width: `${avgRisk.bullying}%` }}></div>
                 </div>
               </div>
 
               <div className="risk-item">
                 <div className="risk-header">
                   <span>Overwork & Fatigue Index</span>
-                  <span className="risk-value blue">20%</span>
+                  <span className="risk-value blue">{avgRisk.fatigue}%</span>
                 </div>
                 <div className="progress-bg">
-                  <div className="progress-bar blue" style={{ width: '20%' }}></div>
+                  <div className="progress-bar blue" style={{ width: `${avgRisk.fatigue}%` }}></div>
                 </div>
               </div>
 
               <div className="risk-item">
                 <div className="risk-header">
                   <span>Physical Workspace Hazard</span>
-                  <span className="risk-value low">10%</span>
+                  <span className="risk-value low">{avgRisk.physical}%</span>
                 </div>
                 <div className="progress-bg">
-                  <div className="progress-bar green" style={{ width: '10%' }}></div>
+                  <div className="progress-bar green" style={{ width: `${avgRisk.physical}%` }}></div>
                 </div>
               </div>
             </div>
@@ -155,7 +169,7 @@ export default function Dashboard() {
                     <h4>Triage Sentinel</h4>
                     <p>Severity & Classification</p>
                   </div>
-                  <span className="agent-status">Done</span>
+                  <span className="agent-status">Online</span>
                 </div>
                 
                 <div className="agent-row">
@@ -164,7 +178,7 @@ export default function Dashboard() {
                     <h4>Risk Analytics</h4>
                     <p>Legal & Liability Exposure</p>
                   </div>
-                  <span className="agent-status">Done</span>
+                  <span className="agent-status">Online</span>
                 </div>
 
                 <div className="agent-row">
@@ -173,16 +187,7 @@ export default function Dashboard() {
                     <h4>Policy Guard</h4>
                     <p>Policy & EAP Alignment</p>
                   </div>
-                  <span className="agent-status">Done</span>
-                </div>
-                
-                <div className="agent-row">
-                  <div className="agent-avatar cn">CN</div>
-                  <div className="agent-info">
-                    <h4>Core Navigator</h4>
-                    <p>Care Pathways</p>
-                  </div>
-                  <span className="agent-status" style={{color: 'var(--warning-color)', borderColor: 'var(--warning-color)'}}>Active</span>
+                  <span className="agent-status">Online</span>
                 </div>
               </div>
             </div>
